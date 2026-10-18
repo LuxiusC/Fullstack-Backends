@@ -1,12 +1,24 @@
 {
     "version": 2,
+    "builds": [
+        {
+            "src": "api/index.js",
+            "use": "@vercel/node"
+        }
+    ],
+    "rewrites": [
+        {
+            "source": "/(.*)",
+            "destination": "/api/index.js"
+        }
+    ],
     "headers": [
         {
-            "source": "/api/(.*)",
+            "source": "/(.*)",
             "headers": [
                 {
                     "key": "Access-Control-Allow-Origin",
-                    "value": "https://full-stack-project-2b6a3.vercel.app"
+                    "value": "https://module-3-frontend.vercel.app"
                 },
                 {
                     "key": "Access-Control-Allow-Methods",
