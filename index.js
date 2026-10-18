@@ -195,9 +195,5 @@ app.post('/purchase/:id', async (req, res) => {
   }
 })
 // user_recipe end
-//likes start
 
-//likes end 
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`)
-})
+module.exports = app 
