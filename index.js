@@ -2,9 +2,11 @@ require("dotenv").config();
 let express = require("express");
 let path = require("path");
 const cors = require("cors");
-const { Pool } = require("pg");
+const { Pool, neonConfig } = require("@neondatabase/serverless");
 const { DATABASE_URL } = process.env;
 const PORT = process.env.PORT || 3000
+const ws = require("ws");
+neonConfig.webSocketConstructor = ws;
 
 let app = express();
 app.use(cors());
