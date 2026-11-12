@@ -99,6 +99,10 @@ app.post('/recipes/post/:firebase_uid', async (req, res) => {
       return res.status(404).json({ "Message": "User not found" })
     }
     const id = getId.rows[0].id
+    const recipeExist = await client.query("SELECT recipe_name from favourite_recipe WHERE recipe_name = $1", [recipe_name])
+    if (recipeExist.rows.length > 0) {
+      return res.status(400).json({ "Message": "Recipe is already added" })
+    }
     const result = await client.query("INSERT INTO favourite_recipe (recipe_id,recipe_name,recipe_country,youtube_url,image_url,profile_id) VALUES($1,$2,$3,$4,$5,$6) RETURNING *", [recipe_id, recipe_name, recipe_country, youtube_url, image_url, id])
     res.json(result.rows)
   } catch (err) {
@@ -107,6 +111,25 @@ app.post('/recipes/post/:firebase_uid', async (req, res) => {
     client.release()
   }
 })
+
+app.delete('/recipes/delete/:id', async (req, res) => {
+  const client = await pool.connect()
+  const { id } = req.params
+  try {
+    const result = await client.query("DELETE from favourite_recipe WHERE id = $1 RETURNING *", [id])
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ message: "Recipe not found" });
+    }
+
+    res.json({ message: "Deleted successfully" });
+  } catch (err) {
+    console.error(err, err.message)
+  } finally {
+    client.release()
+  }
+})
+
 //Favourite_recipe end
 // user_recipe Start
 app.get('/userRecipe', async (req, res) => {
@@ -196,4 +219,11 @@ app.post('/purchase/:id', async (req, res) => {
 })
 // user_recipe end
 
-module.exports = app 
+module.exports = app
+
+if (process.env.NODE_ENV !== 'production') {
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, () => {
+    console.log(`Server running locally at http://localhost:${PORT}`);
+  });
+}
