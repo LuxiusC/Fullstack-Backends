@@ -42,10 +42,24 @@ app.post('/profile', async (req, res) => {
   const { firebase_uid, name, email, image_url, introduction, occupation } = req.body
   const client = await pool.connect()
   try {
-    const result = await client.query("INSERT INTO profile (firebase_uid,name,email,image_url,introduction,occupation) VALUES($1,$2,$3,$4,$5,$6) RETURNING *", [firebase_uid, name, email, image_url, introduction, occupation])
-    res.json(result.rows)
+    const emailExist = await client.query(
+      "SELECT id FROM profile WHERE email = $1",
+      [email]
+    )
+    if (emailExist.rows.length > 0) {
+      return res.status(400).json({ message: "Email already exists" })
+    }
+
+    const result = await client.query(
+      `INSERT INTO profile (firebase_uid, name, email, image_url, introduction, occupation)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       RETURNING *`,
+      [firebase_uid, name, email, image_url, introduction, occupation]
+    )
+    res.json(result.rows[0])
   } catch (err) {
     console.error(err, err.message)
+    res.status(500).json({ error: "Failed to save profile" })
   } finally {
     client.release()
   }
