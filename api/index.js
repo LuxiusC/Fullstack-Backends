@@ -104,23 +104,35 @@ app.get('/recipes/:firebase_uid', async (req, res) => {
 })
 
 app.post('/recipes/post/:firebase_uid', async (req, res) => {
-  const { recipe_id, recipe_name, recipe_country, youtube_url, image_url, profile_id } = req.body
+  const { recipe_id, recipe_name, recipe_country, youtube_url, image_url } = req.body
   const { firebase_uid } = req.params
   const client = await pool.connect()
   try {
-    const getId = await client.query("SELECT id from profile WHERE firebase_uid = $1", [firebase_uid])
+    const getId = await client.query(
+      "SELECT id from profile WHERE firebase_uid = $1 ORDER BY id DESC LIMIT 1",
+      [firebase_uid]
+    )
     if (getId.rows.length === 0) {
       return res.status(404).json({ "Message": "User not found" })
     }
     const id = getId.rows[0].id
-    const recipeExist = await client.query("SELECT recipe_name from favourite_recipe WHERE recipe_name = $1", [recipe_name])
+
+    const recipeExist = await client.query(
+      "SELECT recipe_name from favourite_recipe WHERE recipe_name = $1 AND profile_id = $2",
+      [recipe_name, id]
+    )
     if (recipeExist.rows.length > 0) {
       return res.status(400).json({ "Message": "Recipe is already added" })
     }
-    const result = await client.query("INSERT INTO favourite_recipe (recipe_id,recipe_name,recipe_country,youtube_url,image_url,profile_id) VALUES($1,$2,$3,$4,$5,$6) RETURNING *", [recipe_id, recipe_name, recipe_country, youtube_url, image_url, id])
+
+    const result = await client.query(
+      "INSERT INTO favourite_recipe (recipe_id,recipe_name,recipe_country,youtube_url,image_url,profile_id) VALUES($1,$2,$3,$4,$5,$6) RETURNING *",
+      [recipe_id, recipe_name, recipe_country || '', youtube_url || '', image_url || '', id]
+    )
     res.json(result.rows)
   } catch (err) {
     console.error(err, err.message)
+    res.status(500).json({ "Message": "Failed to add recipe" })
   } finally {
     client.release()
   }
